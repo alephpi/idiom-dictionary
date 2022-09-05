@@ -1,5 +1,5 @@
 from typing import Dict, Tuple, List
-from idiom_dict_spider.idiom_dict_spider.spiders.constants import DICT_MONOPHONE, DICT_POLYPHONE
+from constants import DICT_POLYPHONE
 from pypinyin import pinyin, lazy_pinyin, STYLE_TONE3
 from pypinyin.contrib.tone_convert import to_tone3
 
@@ -14,16 +14,19 @@ class idiom:
                 self.char_polyphone[(index, char)] = []
 
     # init phone from pypinyin, may not correct
-    def init_phone(self):
-        self.phone = lazy_pinyin(self.idiom, style=STYLE_TONE3)
-        self._update_polyphone(self.phone)
+    def init_phone(self, phone: List[str]):
+        # self.phone = lazy_pinyin(self.idiom, style=STYLE_TONE3)
+        self.phone = phone
+        self._update_polyphone(phone)
 
     def _update_polyphone(self, phone: List[str], style=STYLE_TONE3):
         for index, char in self.char_polyphone.keys():
-            # 不同来源拼音风格不一，统一为zhong1 guo2风格（即tone3）
-            char_phone = to_tone3(phone[index])
+            char_phone = phone[index]
             # 判断是否是正确读音，不同来源可能有错误（非多音字错误而是非常低级的笔误）
-            if char_phone in pinyin(char, style=style, heteronym=True)[0]:
+            # 此外还要排除两岸异读
+            polyphones = list(map(to_tone3, DICT_POLYPHONE[char].split(',')))
+            if char_phone in polyphones:
+                # print(char_phone)
                 self.char_polyphone[(index, char)].append(char_phone)
 
     def mark_phone(self, dict: Dict[str, List[str]]):
